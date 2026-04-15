@@ -19,10 +19,8 @@ if (!MONGO_URL) {
 }
 
 // ---------------- MONGODB ----------------
-mongoose.connect(MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
+mongoose.connect(MONGO_URL)
+
 .then(() => console.log("✅ MongoDB connected"))
 .catch(err => {
   console.error("❌ MongoDB connection error:", err);

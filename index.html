@@ -28,7 +28,7 @@
 
   async function updateLocation() {
     try {
-      const res = await fetch("http://localhost:3000/location");
+      const res = await fetch("http://10.253.222.126:3000/location");
       const data = await res.json();
 
       if (data.lat && data.lng) {
