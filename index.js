@@ -4,30 +4,24 @@ const mongoose = require("mongoose");
 
 const app = express();
 
-// ---------------- MIDDLEWARE ----------------
 app.use(cors());
 app.use(express.json());
 
-// ---------------- ENV ----------------
 const PORT = process.env.PORT || 3000;
 const MONGO_URL = process.env.MONGO_URL;
 
-// ---------------- CHECK ENV ----------------
-if (!MONGO_URL) {
-  console.error("❌ MONGO_URL is missing");
-  process.exit(1);
-}
-
-// ---------------- MONGODB ----------------
-mongoose.connect(MONGO_URL)
-
-.then(() => console.log("✅ MongoDB connected"))
-.catch(err => {
-  console.error("❌ MongoDB connection error:", err);
-  process.exit(1);
+// ---------- DEBUG GLOBAL ----------
+app.use((req, res, next) => {
+  console.log("➡️ Incoming:", req.method, req.url);
+  next();
 });
 
-// ---------------- SCHEMA ----------------
+// ---------- MONGODB ----------
+mongoose.connect(MONGO_URL)
+.then(() => console.log("✅ MongoDB connected"))
+.catch(err => console.log("❌ Mongo error:", err));
+
+// ---------- SCHEMA ----------
 const gpsSchema = new mongoose.Schema({
   deviceId: String,
   lat: Number,
@@ -37,53 +31,48 @@ const gpsSchema = new mongoose.Schema({
 
 const GPS = mongoose.model("GPS", gpsSchema);
 
-// ---------------- ROUTES ----------------
-
-// Health check (IMPORTANT for debugging)
+// ---------- ROOT ----------
 app.get("/", (req, res) => {
-  res.send("Server is running");
+  console.log("ROOT HIT");
+  res.send("Server is alive");
 });
 
-// POST GPS data
+// ---------- POST ----------
 app.post("/gps", async (req, res) => {
   try {
-    const { deviceId, lat, lng } = req.body;
+    console.log("POST /gps body:", req.body);
 
-    if (!deviceId || lat === undefined || lng === undefined) {
-      return res.status(400).json({ error: "Invalid data" });
-    }
+    const { deviceId, lat, lng } = req.body;
 
     const data = new GPS({ deviceId, lat, lng });
     await data.save();
 
-    console.log("📍 Saved:", data);
-
     res.json({ status: "saved" });
 
   } catch (err) {
-    console.error("❌ POST /gps error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("🔥 POST ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-// GET latest location
+// ---------- GET ----------
 app.get("/location", async (req, res) => {
   try {
+    console.log("GET /location called");
+
     const latest = await GPS.findOne().sort({ time: -1 });
 
-    if (!latest) {
-      return res.json({});
-    }
+    console.log("Latest:", latest);
 
-    res.json(latest);
+    res.json(latest || {});
 
   } catch (err) {
-    console.error("❌ GET /location error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("🔥 GET ERROR:", err);
+    res.status(200).json({ error: err.message });
   }
 });
 
-// ---------------- START SERVER ----------------
+// ---------- START ----------
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🚀 Server running on port", PORT);
 });
