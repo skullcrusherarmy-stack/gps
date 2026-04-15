@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GPS Tracker</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+  <style>
+    #map {
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  const map = L.map('map').setView([13.0827, 80.2707], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  let marker = L.marker([13.0827, 80.2707]).addTo(map);
+
+  async function updateLocation() {
+    try {
+      const res = await fetch("http://localhost:3000/location");
+      const data = await res.json();
+
+      if (data.lat && data.lng) {
+        marker.setLatLng([data.lat, data.lng]);
+        map.setView([data.lat, data.lng]);
+      }
+
+    } catch (err) {
+      console.log("Error fetching location");
+    }
+  }
+
+  setInterval(updateLocation, 2000);
+</script>
+
+</body>
+</html>
